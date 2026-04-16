@@ -323,7 +323,7 @@ async def change_password(
 
     # 更新密码
     user.hashed_password = hash_password(request.new_password)
-    user.updated_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.utcnow()
     await db.commit()
 
     return ChangePasswordResponse(message="密码修改成功")

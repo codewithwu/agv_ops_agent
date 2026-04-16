@@ -4,6 +4,7 @@ version = "1.0.0"
 description = "AGV 智能运维助手 - 生产环境"
 requires-python = ">=3.12"
 dependencies = [
+    "aiohttp>=3.13.5",
     "alembic>=1.18.4",
     "asyncpg>=0.31.0",
     "bcrypt>=5.0.0",

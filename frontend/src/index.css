@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* 全局 CSS 变量 */
+:root {
+  /* 主色调 - 赛博朋克青色 */
+  --color-primary: #00f5d4;
+  --color-primary-dim: rgba(0, 245, 212, 0.2);
+  --color-primary-glow: rgba(0, 245, 212, 0.4);
+
+  /* 深色背景 */
+  --color-bg-dark: #0a0e14;
+  --color-bg-card: #111620;
+  --color-bg-input: #0d1117;
+
+  /* 边框与分割线 */
+  --color-border: #1e2836;
+  --color-border-bright: #2d3a4d;
+
+  /* 文字颜色 */
+  --color-text: #8b9cb3;
+  --color-text-bright: #e4eaf4;
+  --color-text-dim: #4a5568;
+
+  /* 状态颜色 */
+  --color-error: #ff6b6b;
+  --color-success: #00f5d4;
+
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--color-bg-dark);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

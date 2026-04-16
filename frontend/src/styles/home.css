@@ -1,0 +1,327 @@
+/* ===== 首页样式 - 赛博朋克工业风格 ===== */
+
+.home-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 顶部导航栏 */
+.home-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  background: linear-gradient(180deg, rgba(17, 22, 32, 0.95) 0%, transparent 100%);
+  position: relative;
+  z-index: 10;
+}
+
+.nav-brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-brand::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--color-primary); }
+  50% { opacity: 0.5; box-shadow: 0 0 20px var(--color-primary); }
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-username {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--color-text-dim);
+}
+
+.nav-username span {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.nav-button {
+  height: 36px;
+  padding: 0 20px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 0 15px var(--color-primary-dim);
+}
+
+.nav-button.danger:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+  box-shadow: 0 0 15px rgba(255, 107, 107, 0.2);
+}
+
+/* 主内容区 */
+.home-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 40px;
+}
+
+.home-main::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--color-primary-dim) 0%, transparent 70%);
+  pointer-events: none;
+  animation: breathe 8s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* 主卡片 */
+.home-card {
+  position: relative;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 60px 80px;
+  text-align: center;
+  box-shadow:
+    0 0 60px rgba(0, 245, 212, 0.08),
+    0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: cardFloat 0.6s ease-out;
+}
+
+@keyframes cardFloat {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 装饰角标 */
+.home-card::before,
+.home-card::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-color: var(--color-primary);
+  border-style: solid;
+  opacity: 0.5;
+}
+
+.home-card::before {
+  top: 20px;
+  left: 20px;
+  border-width: 2px 0 0 2px;
+  border-radius: 4px 0 0 0;
+}
+
+.home-card::after {
+  bottom: 20px;
+  right: 20px;
+  border-width: 0 2px 2px 0;
+  border-radius: 0 0 4px 0;
+}
+
+/* 主标题 */
+.home-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--color-text-bright);
+  margin-bottom: 20px;
+  letter-spacing: -2px;
+  animation: titleReveal 0.8s ease-out 0.2s both;
+  text-shadow:
+    0 0 40px var(--color-primary-dim),
+    0 0 80px var(--color-primary-dim);
+}
+
+@keyframes titleReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 副标题 */
+.home-subtitle {
+  font-size: 16px;
+  color: var(--color-text-dim);
+  margin-bottom: 40px;
+  animation: titleReveal 0.8s ease-out 0.4s both;
+}
+
+.home-subtitle span {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* 操作按钮组 */
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: titleReveal 0.8s ease-out 0.6s both;
+}
+
+.home-button {
+  height: 48px;
+  padding: 0 32px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.home-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-dim);
+  transform: translateX(5px);
+}
+
+.home-button.primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #00c9a7 100%);
+  border: none;
+  color: var(--color-bg-dark);
+  font-weight: 600;
+}
+
+.home-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -5px var(--color-primary-dim);
+}
+
+.home-button.danger {
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.home-button.danger:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+  background: rgba(255, 107, 107, 0.1);
+}
+
+/* 底部装饰 */
+.home-footer {
+  padding: 20px 40px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--color-text-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  position: relative;
+}
+
+.home-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+}
+
+/* 加载状态 */
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-dark);
+}
+
+.loading-ring {
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .home-nav {
+    padding: 16px 20px;
+  }
+
+  .home-main {
+    padding: 20px;
+  }
+
+  .home-card {
+    padding: 40px 30px;
+  }
+
+  .home-title {
+    font-size: 48px;
+  }
+}
