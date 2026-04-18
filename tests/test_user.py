@@ -3,10 +3,14 @@
 import pytest
 from httpx import AsyncClient
 
+from src.models.user import User, UserRole
+
 
 @pytest.mark.asyncio
-async def test_list_users_success(client: AsyncClient) -> None:
-    """测试获取用户列表成功."""
+async def test_list_users_success(client: AsyncClient, db_session) -> None:
+    """测试获取用户列表成功（admin 角色）."""
+    from sqlalchemy import select
+
     # 先注册几个用户
     await client.post(
         "/api/v1/auth/register",
@@ -24,6 +28,12 @@ async def test_list_users_success(client: AsyncClient) -> None:
             "password": "password123",
         },
     )
+
+    # 将 user1 角色改为 admin（需要在登录之前）
+    result = await db_session.execute(select(User).where(User.username == "user1"))
+    user = result.scalar_one()
+    user.role = UserRole.ADMIN
+    await db_session.commit()
 
     # 登录获取令牌
     login_resp = await client.post(

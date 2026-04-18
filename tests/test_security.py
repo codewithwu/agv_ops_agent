@@ -1,7 +1,5 @@
 """安全模块测试."""
 
-import pytest
-
 from src.security.jwt import create_access_token, create_refresh_token, verify_token
 from src.security.password import hash_password, verify_password
 

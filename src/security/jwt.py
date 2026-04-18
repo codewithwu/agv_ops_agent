@@ -120,3 +120,28 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="令牌无效或已过期")
 
     return payload
+
+
+async def require_admin(
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """要求用户具有管理员角色（依赖注入）.
+
+    Args:
+        current_user: 当前登录用户
+
+    Returns:
+        用户信息
+
+    Raises:
+        HTTPException: 用户不是管理员
+    """
+    from fastapi import HTTPException
+
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="需要管理员权限",
+        )
+
+    return current_user

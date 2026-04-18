@@ -23,8 +23,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["*"]
 
     # 数据库连接
-    database_url: str = "postgresql+asyncpg://postgres:123456@localhost:5432/app"
-    database_url_sync: str = "postgresql://postgres:123456@localhost:5432/app"
+    database_url: str = ""
+    database_url_sync: str = ""
 
     # JWT 配置
     jwt_secret_key: str = "your-secret-key-change-in-production"

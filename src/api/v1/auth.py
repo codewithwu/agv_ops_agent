@@ -1,6 +1,6 @@
 """认证接口模块."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
@@ -190,14 +190,15 @@ async def login(
 
     # 创建访问令牌
     expires_delta = timedelta(minutes=30)
+    role_value = user.role.value if hasattr(user.role, "value") else str(user.role)
     access_token = create_access_token(
-        data={"sub": user.username, "user_id": user.id},
+        data={"sub": user.username, "user_id": user.id, "role": role_value},
         expires_delta=expires_delta,
     )
 
     # 创建刷新令牌
     refresh_token = create_refresh_token(
-        data={"sub": user.username, "user_id": user.id}
+        data={"sub": user.username, "user_id": user.id, "role": role_value}
     )
 
     return LoginResponse(
@@ -354,6 +355,7 @@ async def get_current_user_info(
         "id": user.id,
         "username": user.username,
         "email": user.email,
+        "role": str(user.role),
         "is_active": user.is_active,
         "created_at": user.created_at.isoformat() if user.created_at else None,
     }

@@ -10,6 +10,7 @@ import json
 
 API_BASE = "http://localhost:8000/api/v1"
 
+
 def make_request(url: str) -> Dict:
     """发起单个GET请求"""
     start = time.time()
@@ -20,18 +21,22 @@ def make_request(url: str) -> Dict:
     except Exception as e:
         return {"status": 0, "time": time.time() - start, "error": str(e)}
 
+
 def make_post_request(url: str, json_data: dict) -> Dict:
     """发起POST请求"""
     start = time.time()
     try:
-        data = json.dumps(json_data).encode('utf-8')
-        req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+        data = json.dumps(json_data).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=data, headers={"Content-Type": "application/json"}
+        )
         with urllib.request.urlopen(req, timeout=10) as resp:
             return {"status": resp.status, "time": time.time() - start}
     except urllib.error.HTTPError as e:
         return {"status": e.code, "time": time.time() - start}
     except Exception as e:
         return {"status": 0, "time": time.time() - start, "error": str(e)}
+
 
 def stress_test(url: str, total: int, concurrency: int):
     """压力测试"""
@@ -48,7 +53,7 @@ def stress_test(url: str, total: int, concurrency: int):
         for i, future in enumerate(as_completed(futures)):
             results.append(future.result())
             if (i + 1) % 100 == 0:
-                print(f"\r进度: {i+1}/{total}", end="", flush=True)
+                print(f"\r进度: {i + 1}/{total}", end="", flush=True)
 
     total_time = time.time() - start_time
 
@@ -57,8 +62,10 @@ def stress_test(url: str, total: int, concurrency: int):
     print("-" * 50)
     print("测试结果:")
     print(f"  总耗时: {total_time:.2f}s")
-    print(f"  QPS: {total/total_time:.2f}")
-    print(f"  平均响应时间: {sum(r['time'] for r in results)/len(results)*1000:.2f}ms")
+    print(f"  QPS: {total / total_time:.2f}")
+    print(
+        f"  平均响应时间: {sum(r['time'] for r in results) / len(results) * 1000:.2f}ms"
+    )
 
     statuses = {}
     for r in results:
@@ -68,6 +75,7 @@ def stress_test(url: str, total: int, concurrency: int):
     errors = [r for r in results if r.get("error")]
     if errors:
         print(f"  错误数: {len(errors)}")
+
 
 def login_test(total: int, concurrency: int):
     """登录接口测试"""
@@ -80,12 +88,14 @@ def login_test(total: int, concurrency: int):
     start_time = time.time()
 
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
-        futures = [executor.submit(make_post_request, url, payload) for _ in range(total)]
+        futures = [
+            executor.submit(make_post_request, url, payload) for _ in range(total)
+        ]
 
         for i, future in enumerate(as_completed(futures)):
             results.append(future.result())
             if (i + 1) % 10 == 0:
-                print(f"\r进度: {i+1}/{total}", end="", flush=True)
+                print(f"\r进度: {i + 1}/{total}", end="", flush=True)
 
     total_time = time.time() - start_time
 
@@ -93,8 +103,10 @@ def login_test(total: int, concurrency: int):
     print("-" * 50)
     print("测试结果:")
     print(f"  总耗时: {total_time:.2f}s")
-    print(f"  QPS: {total/total_time:.2f}")
-    print(f"  平均响应时间: {sum(r['time'] for r in results)/len(results)*1000:.2f}ms")
+    print(f"  QPS: {total / total_time:.2f}")
+    print(
+        f"  平均响应时间: {sum(r['time'] for r in results) / len(results) * 1000:.2f}ms"
+    )
 
     statuses = {}
     for r in results:
@@ -104,6 +116,7 @@ def login_test(total: int, concurrency: int):
     errors = [r for r in results if r.get("error")]
     if errors:
         print(f"  错误数: {len(errors)}")
+
 
 def main():
     import sys
@@ -125,6 +138,7 @@ def main():
         login_test(total, concurrency)
     else:
         stress_test(cmd, total, concurrency)
+
 
 if __name__ == "__main__":
     main()

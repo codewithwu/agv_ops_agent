@@ -31,6 +31,23 @@
   --transition-slow: 500ms ease;
 }
 
+/* 白天模式变量 */
+.light-mode {
+  --color-bg-dark: #f5f7fa;
+  --color-bg-card: #ffffff;
+  --color-bg-input: #eef1f5;
+  --color-border: #dde2e8;
+  --color-border-bright: #c8d0db;
+  --color-text: #4a5568;
+  --color-text-bright: #1a202c;
+  --color-text-dim: #8b9cb3;
+}
+
+.light-mode body {
+  background: var(--color-bg-dark);
+  color: var(--color-text);
+}
+
 * {
   margin: 0;
   padding: 0;

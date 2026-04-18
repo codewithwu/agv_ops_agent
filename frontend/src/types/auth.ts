@@ -58,6 +58,7 @@ export interface UserInfo {
   id: number;
   username: string;
   email: string;
+  role: string;
   is_active: boolean;
   created_at: string | null;
 }
