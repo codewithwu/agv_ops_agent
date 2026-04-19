@@ -161,5 +161,6 @@ class TestVectorStoreService:
         assert len(results) > 0, "应能检索到相关内容"
         content = results[0].page_content
         # 验证检索结果包含 PDF 中的相关内容
-        assert "AGV" in content or "Operation" in content or "Chapter" in content, \
+        assert "AGV" in content or "Operation" in content or "Chapter" in content, (
             f"检索结果应包含PDF相关内容，实际内容: {content}"
+        )
