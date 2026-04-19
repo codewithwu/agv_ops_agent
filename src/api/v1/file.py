@@ -21,6 +21,8 @@ from src.database import get_db
 from src.models.file import File as FileModel
 from src.security.jwt import get_current_user, require_admin
 from src.tasks import cleanup_physical_file
+from src.tasks.submitter import submit_vectorize_task
+from src.config import settings
 
 router = APIRouter()
 
@@ -54,6 +56,7 @@ class FileListResponse(BaseModel):
     "/upload", response_model=FileResponse, status_code=status.HTTP_201_CREATED
 )
 async def upload_file(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     description: str | None = None,
     current_user: dict = Depends(require_admin),
@@ -62,11 +65,13 @@ async def upload_file(
     """上传文件接口.
 
     相同文件（MD5 哈希相同）只会上传一次。
+    支持的文件类型（.pdf, .md, .txt）会自动向量化。
 
     Args:
         file: 上传的文件
         description: 文件描述（可选）
         current_user: 当前用户信息
+        background_tasks: 后台任务
         db: 数据库会话
 
     Returns:
@@ -127,6 +132,16 @@ async def upload_file(
     db.add(file_record)
     await db.commit()
     await db.refresh(file_record)
+
+    # 文件扩展名检查并添加向量化后台任务
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext in settings.vectorizable_extensions:
+        metadata = {
+            "user_id": current_user["user_id"],
+            "file_id": file_record.id,
+            "original_filename": file.filename,
+        }
+        submit_vectorize_task(str(file_path), metadata, background_tasks)
 
     return FileResponse(
         id=file_record.id,

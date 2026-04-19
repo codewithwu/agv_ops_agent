@@ -46,5 +46,8 @@ class Settings(BaseSettings):
     openai_embedding_base_url: str = "https://api-inference.modelscope.cn/v1"
     openai_embedding_model_name: str = "Qwen/Qwen3-Embedding-8B"
 
+    # 支持向量化的文件扩展名
+    vectorizable_extensions: set[str] = {".pdf", ".md", ".txt"}
+
 
 settings = Settings()

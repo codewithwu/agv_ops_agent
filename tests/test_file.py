@@ -3,6 +3,7 @@
 import hashlib
 import io
 import pytest
+from unittest.mock import patch, MagicMock
 from httpx import AsyncClient
 
 from src.models.user import User, UserRole
@@ -518,3 +519,231 @@ async def test_delete_file_not_owner_fail(client: AsyncClient, db_session) -> No
         headers={"Authorization": f"Bearer {admin2_token}"},
     )
     assert delete_resp.status_code == 404
+
+
+# ============ 向量化扩展名测试 ============
+
+
+@pytest.mark.asyncio
+async def test_upload_vectorizable_extensions(client: AsyncClient, db_session) -> None:
+    """测试上传支持向量化的文件类型（.md, .pdf, .txt）."""
+    from sqlalchemy import select
+
+    # 注册 admin 用户
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "vec_user",
+            "email": "vec@test.com",
+            "password": "password123",
+        },
+    )
+    result = await db_session.execute(select(User).where(User.username == "vec_user"))
+    user = result.scalar_one()
+    user.role = UserRole.ADMIN
+    await db_session.commit()
+
+    login_resp = await client.post(
+        "/api/v1/auth/login",
+        json={"username": "vec_user", "password": "password123"},
+    )
+    token = login_resp.json()["access_token"]
+
+    # 测试 .md 文件
+    file_md = create_test_file("# AGV Manual")
+    resp_md = await client.post(
+        "/api/v1/files/upload",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("test.md", file_md, "text/markdown")},
+    )
+    assert resp_md.status_code == 201
+    assert resp_md.json()["original_filename"] == "test.md"
+
+    # 测试 .txt 文件
+    file_txt = create_test_file("Plain text content")
+    resp_txt = await client.post(
+        "/api/v1/files/upload",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("test.txt", file_txt, "text/plain")},
+    )
+    assert resp_txt.status_code == 201
+    assert resp_txt.json()["original_filename"] == "test.txt"
+
+
+@pytest.mark.asyncio
+async def test_upload_non_vectorizable_extensions(
+    client: AsyncClient, db_session
+) -> None:
+    """测试上传不支持向量化的文件类型（.png, .jpg, .zip），文件仍可上传但不触发向量化."""
+    from sqlalchemy import select
+
+    # 注册 admin 用户
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "non_vec_user",
+            "email": "nonvec@test.com",
+            "password": "password123",
+        },
+    )
+    result = await db_session.execute(
+        select(User).where(User.username == "non_vec_user")
+    )
+    user = result.scalar_one()
+    user.role = UserRole.ADMIN
+    await db_session.commit()
+
+    login_resp = await client.post(
+        "/api/v1/auth/login",
+        json={"username": "non_vec_user", "password": "password123"},
+    )
+    token = login_resp.json()["access_token"]
+
+    # 测试 .png 文件（不支持向量化但可上传）
+    file_png = create_test_file("fake png content")
+    resp_png = await client.post(
+        "/api/v1/files/upload",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("image.png", file_png, "image/png")},
+    )
+    assert resp_png.status_code == 201
+    assert resp_png.json()["original_filename"] == "image.png"
+
+
+# ============ submitter 模块测试 ============
+
+
+@pytest.mark.asyncio
+async def test_submit_vectorize_task_called(client: AsyncClient, db_session) -> None:
+    """测试上传向量化的文件时，submit_vectorize_task 被正确调用."""
+    from sqlalchemy import select
+
+    # 注册 admin 用户
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "submit_vec_user",
+            "email": "submitvec@test.com",
+            "password": "password123",
+        },
+    )
+    result = await db_session.execute(
+        select(User).where(User.username == "submit_vec_user")
+    )
+    user = result.scalar_one()
+    user.role = UserRole.ADMIN
+    await db_session.commit()
+
+    login_resp = await client.post(
+        "/api/v1/auth/login",
+        json={"username": "submit_vec_user", "password": "password123"},
+    )
+    token = login_resp.json()["access_token"]
+
+    # mock submit_vectorize_task
+    with patch("src.api.v1.file.submit_vectorize_task") as mock_submit:
+        file_content = "# Test AGV"
+        file = create_test_file(file_content)
+        resp = await client.post(
+            "/api/v1/files/upload",
+            headers={"Authorization": f"Bearer {token}"},
+            files={"file": ("submit_test.md", file, "text/markdown")},
+        )
+        assert resp.status_code == 201
+        # 验证 submit_vectorize_task 被调用
+        mock_submit.assert_called_once()
+        call_args = mock_submit.call_args
+        # 验证参数：file_path, metadata, background_tasks
+        assert len(call_args[0]) == 3
+        assert call_args[0][2] is not None  # background_tasks
+
+
+@pytest.mark.asyncio
+async def test_submit_vectorize_task_not_called_for_non_vectorizable(
+    client: AsyncClient, db_session
+) -> None:
+    """测试上传非向量化文件时，submit_vectorize_task 不会被调用."""
+    from sqlalchemy import select
+
+    # 注册 admin 用户
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "no_submit_user",
+            "email": "nosubmit@test.com",
+            "password": "password123",
+        },
+    )
+    result = await db_session.execute(
+        select(User).where(User.username == "no_submit_user")
+    )
+    user = result.scalar_one()
+    user.role = UserRole.ADMIN
+    await db_session.commit()
+
+    login_resp = await client.post(
+        "/api/v1/auth/login",
+        json={"username": "no_submit_user", "password": "password123"},
+    )
+    token = login_resp.json()["access_token"]
+
+    # mock submit_vectorize_task
+    with patch("src.api.v1.file.submit_vectorize_task") as mock_submit:
+        file = create_test_file("fake zip content")
+        resp = await client.post(
+            "/api/v1/files/upload",
+            headers={"Authorization": f"Bearer {token}"},
+            files={"file": ("archive.zip", file, "application/zip")},
+        )
+        assert resp.status_code == 201
+        # 验证 submit_vectorize_task 不被调用
+        mock_submit.assert_not_called()
+
+
+# ============ vectorize_file 任务测试 ============
+
+
+def test_vectorize_file_success() -> None:
+    """测试 vectorize_file 任务成功执行."""
+    from src.tasks.file_tasks import vectorize_file
+
+    with patch("src.tasks.file_tasks.get_vectorstore_service") as mock_get_service:
+        mock_service = MagicMock()
+        mock_get_service.return_value = mock_service
+
+        vectorize_file("/fake/path/test.md", {"user_id": 1, "file_id": 1})
+
+        mock_service.add_documents.assert_called_once_with(
+            "/fake/path/test.md", {"user_id": 1, "file_id": 1}
+        )
+
+
+def test_vectorize_file_failure() -> None:
+    """测试 vectorize_file 任务执行失败时记录日志（不抛出异常）."""
+    from src.tasks.file_tasks import vectorize_file
+
+    with patch("src.tasks.file_tasks.get_vectorstore_service") as mock_get_service:
+        mock_service = MagicMock()
+        mock_service.add_documents.side_effect = Exception("VectorDB error")
+        mock_get_service.return_value = mock_service
+
+        # 不应抛出异常，只记录日志
+        with patch("src.tasks.file_tasks.logger"):
+            vectorize_file("/fake/path/test.md", {})
+
+
+# ============ submitter 直接测试 ============
+
+
+def test_submit_vectorize_task_direct() -> None:
+    """测试 submit_vectorize_task 直接调用."""
+    from src.tasks.submitter import submit_vectorize_task
+
+    mock_background_tasks = MagicMock()
+
+    with patch("src.tasks.submitter.vectorize_file") as mock_vectorize:
+        submit_vectorize_task("/fake/path.md", {"key": "value"}, mock_background_tasks)
+
+        mock_background_tasks.add_task.assert_called_once_with(
+            mock_vectorize, "/fake/path.md", {"key": "value"}
+        )
