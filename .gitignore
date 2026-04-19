@@ -6,6 +6,7 @@ __pycache__/
 # C extensions
 *.so
 CLAUDE.local.md
+setup.md
 
 # Distribution / packaging
 .Python
