@@ -49,5 +49,16 @@ class Settings(BaseSettings):
     # 支持向量化的文件扩展名
     vectorizable_extensions: set[str] = {".pdf", ".md", ".txt"}
 
+    # ===== LLM 配置 =====
+
+    # Ollama LLM 配置
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model_name: str = "qwen3.5:9b"
+
+    # OpenAI LLM 配置
+    openai_api_key: str = ""
+    openai_base_url: str = "https://api.longcat.chat/openai"
+    openai_model_name: str = "LongCat-Flash-Chat"
+
 
 settings = Settings()
