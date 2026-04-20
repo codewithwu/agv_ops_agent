@@ -5,7 +5,7 @@
  * - 其他: 仅显示个人信息
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LogoutOutlined,
@@ -16,8 +16,9 @@ import {
   EditOutlined,
   DeleteOutlined,
   HolderOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
-import { message, Table, Modal, Select, Switch, Upload, Button, Layout, Menu } from 'antd';
+import { message, Table, Modal, Select, Switch, Upload, Button, Layout, Menu, Input, Spin } from 'antd';
 import type { MenuProps } from 'antd';
 import type { UploadProps } from 'antd';
 
@@ -25,6 +26,7 @@ import { logout } from '../api/auth';
 import { getCurrentUser } from '../api/auth';
 import { listUsers, updateUser } from '../api/user';
 import { uploadFile, listFiles, deleteFile, type FileListResponse } from '../api/file';
+import { chat } from '../api/agent';
 import { useAuthStore } from '../store/authStore';
 import type { UserInfo } from '../types/auth';
 import '../styles/home.css';
@@ -54,6 +56,20 @@ export default function HomePage() {
 
   // 侧边栏折叠状态
   const [collapsed, setCollapsed] = useState(false);
+
+  // AI 问答侧边栏状态
+  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [currentSessionId] = useState(() => `session_${Date.now()}`);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // 滚动到底部
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   // 获取用户信息
   useEffect(() => {
@@ -184,6 +200,29 @@ export default function HomePage() {
     }
   };
 
+  // AI 问答
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    setChatMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setChatLoading(true);
+
+    try {
+      const response = await chat({
+        message: userMessage,
+        session_id: currentSessionId,
+        llm_provider: 'openai',
+      });
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: response.message }]);
+    } catch (error) {
+      message.error('发送消息失败，请重试');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -275,6 +314,11 @@ export default function HomePage() {
       key: 'files',
       icon: <FileOutlined />,
       label: '文件管理',
+    },
+    {
+      key: 'ai-chat',
+      icon: <RobotOutlined />,
+      label: 'AI 问答',
     },
   ];
 
@@ -442,6 +486,58 @@ export default function HomePage() {
                   },
                 ]}
               />
+            </div>
+          )}
+
+          {isAdmin && activeTab === 'ai-chat' && (
+            <div className="tab-content ai-chat-container">
+              <div className="content-header">
+                <span className="content-title">AI 智能问答</span>
+              </div>
+              <div className="ai-chat-panel">
+                <div className="ai-chat-messages" ref={chatContainerRef}>
+                  {chatMessages.length === 0 && (
+                    <div className="ai-chat-empty">
+                      <RobotOutlined style={{ fontSize: 48, color: '#666' }} />
+                      <p>您好！我是 AGV 智能助手，可以帮您解答关于 AGV 操作、维护、故障处理等问题。</p>
+                      <p>请上传 AGV 相关文档后向我提问。</p>
+                    </div>
+                  )}
+                  {chatMessages.map((item, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        justifyContent: item.role === 'user' ? 'flex-end' : 'flex-start',
+                        border: 'none',
+                        padding: '8px 0',
+                      }}
+                    >
+                      <div
+                        className={`ai-chat-bubble ${item.role === 'user' ? 'user-bubble' : 'assistant-bubble'}`}
+                      >
+                        {item.content}
+                      </div>
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="ai-chat-loading">
+                      <Spin size="small" /> AI 正在思考...
+                    </div>
+                  )}
+                </div>
+                <div className="ai-chat-input">
+                  <Input.Search
+                    placeholder="输入您的问题，按回车发送..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onSearch={handleSendMessage}
+                    enterButton="发送"
+                    loading={chatLoading}
+                    disabled={chatLoading}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>

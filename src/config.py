@@ -1,5 +1,8 @@
 """应用配置模块."""
 
+from pathlib import Path
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,6 +22,12 @@ class Settings(BaseSettings):
 
     host: str = "0.0.0.0"
     port: int = 8000
+
+    # 日志配置
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+
+    # 应用根目录（用于日志等文件路径）
+    app_root: Path = Path(__file__).parent.parent
 
     cors_origins: list[str] = ["*"]
 

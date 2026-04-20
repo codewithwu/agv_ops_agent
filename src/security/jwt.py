@@ -138,6 +138,10 @@ async def require_admin(
     """
     from fastapi import HTTPException
 
+    from src.utils import console_logger
+
+    console_logger.info(f"当前登录用户角色: {current_user.get('role')}")
+
     if current_user.get("role") != "admin":
         raise HTTPException(
             status_code=403,

@@ -1,12 +1,10 @@
 """文件相关的后台任务."""
 
-import logging
 import os
 from pathlib import Path
 
 from src.services.vectorstore import get_vectorstore_service
-
-logger = logging.getLogger(__name__)
+from src.utils import console_logger
 
 
 def vectorize_file(file_path: str, metadata: dict) -> None:
@@ -19,9 +17,9 @@ def vectorize_file(file_path: str, metadata: dict) -> None:
     try:
         service = get_vectorstore_service()
         service.add_documents(file_path, metadata)
-        logger.info(f"文件向量化成功: {file_path}")
+        console_logger.info(f"文件向量化成功: {file_path}")
     except Exception as e:
-        logger.error(f"文件向量化失败: {file_path}, 错误: {e}")
+        console_logger.error(f"文件向量化失败: {file_path}, 错误: {e}")
 
 
 def delete_vectorstore_entries(file_path: str) -> None:
@@ -34,7 +32,7 @@ def delete_vectorstore_entries(file_path: str) -> None:
         # TODO: 根据 file_path 删除向量存储中的文档
         pass
     except Exception as e:
-        logger.error(f"删除向量存储失败: {file_path}, 错误: {e}")
+        console_logger.error(f"删除向量存储失败: {file_path}, 错误: {e}")
 
 
 def cleanup_physical_file(file_path: str) -> None:

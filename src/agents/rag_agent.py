@@ -14,6 +14,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from src.agents.llm_factory import get_llm
 from src.services.vectorstore import get_vectorstore_service
+from src.utils import console_logger
 
 
 # 创建内存检查点（用于记忆存储）
@@ -42,6 +43,8 @@ def vector_search(query: str) -> str:
         Returns:
             相关文档内容列表
     """
+    console_logger.info(f"调用知识库检索工具，查询内容: {query}")
+
     vectorstore_service = get_vectorstore_service(
         embedding_provider="ollama",
         collection_name="agv_docs",
@@ -50,7 +53,10 @@ def vector_search(query: str) -> str:
     results = vs.similarity_search(query=query, k=5)
 
     if not results:
+        console_logger.info("知识库检索结果为空")
         return "没有找到相关文档"
+
+    console_logger.info(f"知识库检索到 {len(results)} 条相关文档")
 
     # 格式化结果
     formatted_results = []
