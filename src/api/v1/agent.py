@@ -1,10 +1,12 @@
 """智能体问答接口."""
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from src.agents.rag_agent import create_rag_agent
 from src.security.jwt import get_current_user
+from src.utils import console_logger
 
 router = APIRouter()
 
@@ -23,6 +25,53 @@ class ChatResponse(BaseModel):
     message: str
     session_id: str
     messages: list[dict]
+
+
+@router.post("/chat/stream")
+async def chat_stream(
+    request: ChatRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """RAG 智能问答流式输出接口.
+
+    Args:
+        request: 对话请求，包含消息、会话ID和大模型提供商
+        current_user: 当前用户信息
+
+    Returns:
+        流式响应，逐块输出 AI 回复内容
+    """
+    console_logger.info(f"流式对话请求，会话: {request.session_id}")
+
+    # 创建 Agent
+    agent = create_rag_agent(llm_provider=request.llm_provider)
+
+    async def generate():
+        """异步生成流式响应."""
+        try:
+            for token, metadata in agent.stream(
+                {"messages": [{"role": "user", "content": request.message}]},
+                config={"configurable": {"thread_id": request.session_id}},
+                stream_mode="messages",
+            ):
+                # 检查 token 是否有 content 属性
+                if hasattr(token, "content") and token.content:
+                    content = token.content
+                    console_logger.debug(f"流式输出: {content}")
+                    yield content
+        except Exception as e:
+            console_logger.error(f"流式输出异常: {e}")
+            yield f"[错误: {str(e)}]"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/chat", response_model=ChatResponse)

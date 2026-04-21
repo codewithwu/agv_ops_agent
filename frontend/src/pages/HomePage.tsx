@@ -26,7 +26,7 @@ import { logout } from '../api/auth';
 import { getCurrentUser } from '../api/auth';
 import { listUsers, updateUser } from '../api/user';
 import { uploadFile, listFiles, deleteFile, type FileListResponse } from '../api/file';
-import { chat } from '../api/agent';
+import { chat, chatStream } from '../api/agent';
 import { useAuthStore } from '../store/authStore';
 import type { UserInfo } from '../types/auth';
 import '../styles/home.css';
@@ -63,6 +63,8 @@ export default function HomePage() {
   const [chatLoading, setChatLoading] = useState(false);
   const [currentSessionId] = useState(() => `session_${Date.now()}`);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  // 用于打字效果：正在输入的 assistant 消息内容
+  const [typingContent, setTypingContent] = useState('');
 
   // 滚动到底部
   useEffect(() => {
@@ -205,20 +207,44 @@ export default function HomePage() {
     if (!chatInput.trim() || chatLoading) return;
 
     const userMessage = chatInput.trim();
+    console.log('[handleSendMessage] 发送消息:', userMessage);
     setChatInput('');
     setChatMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    // 重置打字内容
+    setTypingContent('');
     setChatLoading(true);
 
     try {
-      const response = await chat({
-        message: userMessage,
-        session_id: currentSessionId,
-        llm_provider: 'openai',
-      });
-      setChatMessages((prev) => [...prev, { role: 'assistant', content: response.message }]);
+      // 使用流式接口
+      chatStream(
+        {
+          message: userMessage,
+          session_id: currentSessionId,
+          llm_provider: 'openai',
+        },
+        (content) => {
+          // 累积内容，用于打字效果
+          setTypingContent((prev) => prev + content);
+        },
+        (error) => {
+          console.error('[handleSendMessage] 错误:', error);
+          message.error('发送消息失败，请重试');
+          setChatLoading(false);
+        },
+        (fullContent) => {
+          console.log('[handleSendMessage] 流结束, fullContent:', fullContent.length, 'chars');
+          // 流式结束，将 typingContent 保存到 chatMessages
+          setChatMessages((prev) => {
+            console.log('[handleSendMessage] 保存消息到 chatMessages, length:', fullContent.length);
+            return [...prev, { role: 'assistant', content: fullContent }];
+          });
+          setTypingContent('');
+          setChatLoading(false);
+        }
+      );
     } catch (error) {
+      console.error('[handleSendMessage] 异常:', error);
       message.error('发送消息失败，请重试');
-    } finally {
       setChatLoading(false);
     }
   };
@@ -520,7 +546,22 @@ export default function HomePage() {
                       </div>
                     </div>
                   ))}
-                  {chatLoading && (
+                  {typingContent && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        border: 'none',
+                        padding: '8px 0',
+                      }}
+                    >
+                      <div className="ai-chat-bubble assistant-bubble">
+                        <span className="typing-content">{typingContent}</span>
+                        <span className="typing-cursor">|</span>
+                      </div>
+                    </div>
+                  )}
+                  {chatLoading && !typingContent && (
                     <div className="ai-chat-loading">
                       <Spin size="small" /> AI 正在思考...
                     </div>

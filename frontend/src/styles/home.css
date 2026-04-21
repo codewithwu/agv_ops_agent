@@ -751,6 +751,18 @@
   gap: 8px;
 }
 
+/* 打字效果光标 */
+.typing-cursor {
+  display: inline-block;
+  animation: blink 0.8s infinite;
+  color: var(--color-primary);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .ai-chat-input {
   padding: 16px;
   border-top: 1px solid var(--color-border);
