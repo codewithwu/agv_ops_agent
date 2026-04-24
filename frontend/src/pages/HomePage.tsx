@@ -61,10 +61,27 @@ export default function HomePage() {
   const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [currentSessionId] = useState(() => `session_${Date.now()}`);
+  const [currentSessionId, setCurrentSessionId] = useState(() => {
+    // 从 localStorage 读取 session_id，优先复用已有的会话
+    const stored = localStorage.getItem('chat_session_id');
+    if (stored) return stored;
+    // 没有则创建新的
+    const newId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    localStorage.setItem('chat_session_id', newId);
+    return newId;
+  });
   const chatContainerRef = useRef<HTMLDivElement>(null);
   // 用于打字效果：正在输入的 assistant 消息内容
   const [typingContent, setTypingContent] = useState('');
+
+  // 新建会话
+  const handleNewSession = () => {
+    const newId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    localStorage.setItem('chat_session_id', newId);
+    setCurrentSessionId(newId);
+    setChatMessages([]);
+    setTypingContent('');
+  };
 
   // 滚动到底部
   useEffect(() => {
@@ -519,6 +536,14 @@ export default function HomePage() {
             <div className="tab-content ai-chat-container">
               <div className="content-header">
                 <span className="content-title">AI 智能问答</span>
+                <Button
+                  type="text"
+                  size="small"
+                  onClick={handleNewSession}
+                  className="new-session-btn"
+                >
+                  新建会话
+                </Button>
               </div>
               <div className="ai-chat-panel">
                 <div className="ai-chat-messages" ref={chatContainerRef}>

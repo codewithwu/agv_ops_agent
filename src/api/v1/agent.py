@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from src.agents.rag_agent import create_rag_agent
+from src.agents.rag_agent import AgentManager
 from src.security.jwt import get_current_user
 from src.utils import console_logger
 
@@ -43,8 +43,12 @@ async def chat_stream(
     """
     console_logger.info(f"流式对话请求，会话: {request.session_id}")
 
-    # 创建 Agent
-    agent = create_rag_agent(llm_provider=request.llm_provider)
+    # 通过 AgentManager 获取 Agent（多例模式，相同 session_id 复用实例）
+    agent_manager = AgentManager()
+    agent = agent_manager.get_agent(
+        session_id=request.session_id, llm_provider=request.llm_provider
+    )
+    console_logger.info(f"Agent 实例 ID: {id(agent)}, 会话: {request.session_id}")
 
     async def generate():
         """异步生成流式响应."""
@@ -88,8 +92,11 @@ async def chat(
     Returns:
         对话结果
     """
-    # 创建 Agent
-    agent = create_rag_agent(llm_provider=request.llm_provider)
+    # 通过 AgentManager 获取 Agent（多例模式，相同 session_id 复用实例）
+    agent_manager = AgentManager()
+    agent = agent_manager.get_agent(
+        session_id=request.session_id, llm_provider=request.llm_provider
+    )
 
     # 调用 Agent
     result = agent.invoke(
