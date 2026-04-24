@@ -126,9 +126,7 @@ class LoggerManager:
         # 文件处理器（可选）
         if enable_file:
             # 常规日志
-            file_handler = self._create_file_handler(
-                "INFO", f"{settings.app_name}.log"
-            )
+            file_handler = self._create_file_handler("INFO", f"{settings.app_name}.log")
             file_handler.setLevel(logging.INFO)
             logger.addHandler(file_handler)
 

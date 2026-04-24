@@ -204,7 +204,9 @@ async def test_chat_stream_success(client: AsyncClient, db_session) -> None:
 
 
 @pytest.mark.asyncio
-async def test_chat_stream_with_ollama_provider(client: AsyncClient, db_session) -> None:
+async def test_chat_stream_with_ollama_provider(
+    client: AsyncClient, db_session
+) -> None:
     """测试使用 ollama provider（使用 mock）。"""
     token = await register_and_login(client, db_session, "stream_user_002")
 
