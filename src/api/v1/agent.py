@@ -56,6 +56,7 @@ async def chat_stream(
             for token, metadata in agent.stream(
                 {"messages": [{"role": "user", "content": request.message}]},
                 config={"configurable": {"thread_id": request.session_id}},
+                context={"user_id": current_user.get("sub", "anonymous")},
                 stream_mode="messages",
             ):
                 # 检查 token 是否有 content 属性
@@ -102,6 +103,7 @@ async def chat(
     result = agent.invoke(
         {"messages": [{"role": "user", "content": request.message}]},
         config={"configurable": {"thread_id": request.session_id}},
+        context={"user_id": current_user.get("sub", "anonymous")},
     )
 
     # 提取回复消息

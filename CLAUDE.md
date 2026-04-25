@@ -76,6 +76,10 @@ project-root/
 - **禁止**裸露 `except:` 或模糊 `except Exception:`
 - 必须捕获具体异常类型并记录日志
 
+### 日志
+- 增加日志功能时，从 `src/utils/logger.py` 获取日志代码
+- 无特殊说明时，默认使用 `console_logger`
+
 ### 安全
 - 严禁硬编码密钥/Token/连接串
 - 用 `os.getenv()` 或 `pydantic-settings` 读取配置

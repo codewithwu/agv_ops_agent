@@ -12,9 +12,12 @@ from typing import Annotated, Any
 from langchain.agents import create_agent
 
 from src.agents.checkpointer import get_checkpointer
+from src.agents.context import AgentContext
 from src.agents.llm_factory import get_llm
+from src.agents.middleware import get_all_middleware
 from src.agents.prompts import RAG_SYSTEM_PROMPT
-from src.agents.tools import vector_search
+from src.agents.store import get_store
+from src.agents.tools import get_all_tools
 from src.utils import console_logger
 
 
@@ -51,9 +54,12 @@ class AgentManager:
             llm = get_llm(llm_provider)
             self._agents[session_id] = create_agent(
                 model=llm,
-                tools=[vector_search],
+                tools=get_all_tools(),
                 system_prompt=RAG_SYSTEM_PROMPT,
                 checkpointer=get_checkpointer(),
+                store=get_store(),
+                context_schema=AgentContext,
+                middleware=get_all_middleware(),
             )
             console_logger.info(
                 f"创建新 Agent 实例，session_id: {session_id}, "
