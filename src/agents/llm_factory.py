@@ -3,6 +3,7 @@
 提供不同 Provider 的 LLM 实例：
 - Ollama (本地部署)
 - OpenAI (云服务)
+- Ling (备用模型)
 """
 
 from functools import lru_cache
@@ -36,13 +37,20 @@ def _create_llm(provider: str) -> Any:
             model=settings.openai_model_name,
             temperature=0.7,
         )
+    elif provider == "ling":
+        return ChatOpenAI(
+            api_key=settings.ling_api_key,
+            base_url=settings.ling_baseurl,
+            model=settings.ling_model_name,
+            temperature=0.7,
+        )
     else:
         raise ValueError(f"不支持的 LLM 提供者: {provider}")
 
 
 @lru_cache()
 def get_llm(
-    llm_provider: Annotated[str, "LLM 提供者: 'ollama' 或 'openai'"] = "ollama",
+    llm_provider: Annotated[str, "LLM 提供者: 'ollama'、'openai' 或 'ling'"] = "ollama",
 ) -> Any:
     """获取 LLM 实例（单例）.
 

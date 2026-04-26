@@ -1,11 +1,16 @@
 from functools import lru_cache
 
 from langchain.agents.middleware import (
+    ModelRequest,
+    ModelResponse,
     SummarizationMiddleware,
     before_model,
     after_model,
+    wrap_model_call,
+    wrap_tool_call,
+    dynamic_prompt,
 )
-from langchain.messages import RemoveMessage
+from langchain.messages import RemoveMessage, ToolMessage
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langchain.agents import AgentState
 from langgraph.runtime import Runtime
@@ -83,6 +88,126 @@ def delete_old_messages(state: AgentState, runtime: Runtime) -> dict | None:
 
 
 # =============================================================================
+# 角色权限中间件
+# =============================================================================
+
+# 工具权限配置（开放方案：所有角色可以使用所有工具）
+TOOL_PERMISSIONS = {
+    "admin": [],  # admin 拥有所有工具
+    "operator": [],  # 操作员拥有所有工具
+    "viewer": [],  # 查看者拥有所有工具（后续可根据需要限制）
+}
+
+
+@wrap_model_call
+def role_based_tools(request: ModelRequest, handler) -> ModelResponse:
+    """根据用户角色过滤工具.
+
+    未认证用户（viewer）只能使用公开工具。
+    操作员不能使用管理级工具。
+    管理员可以使用所有工具。
+    """
+    # 从 runtime.context 直接获取 user_role（而非从 state）
+    user_role = request.runtime.context.get("user_role", "viewer")
+    logger.info(f"role_based_tools - 当前用户角色: {user_role}")
+
+    # 获取该角色不能使用的工具
+    forbidden_tools = TOOL_PERMISSIONS.get(user_role, [])
+
+    # 过滤工具
+    if forbidden_tools:
+        original_count = len(request.tools)
+        tools = [t for t in request.tools if t.name not in forbidden_tools]
+        logger.info(
+            f"role_based_tools - 过滤前工具数: {original_count}, "
+            f"过滤后工具数: {len(tools)}, 禁用: {forbidden_tools}"
+        )
+        request = request.override(tools=tools)
+
+    return handler(request)
+
+
+# =============================================================================
+# 动态提示词中间件
+# =============================================================================
+
+
+@dynamic_prompt
+def dynamic_system_prompt(request: ModelRequest) -> str:
+    """根据用户问题动态切换提示词.
+
+    - AGV 相关问题：使用 RAG 提示词，引导检索知识库
+    - 普通问题：使用普通助手提示词
+    """
+    from src.agents.prompts import (
+        DEFAULT_SYSTEM_PROMPT,
+        RAG_SYSTEM_PROMPT,
+        is_agv_related,
+    )
+
+    # 获取用户最新消息
+    messages = request.state.get("messages", [])
+    if not messages:
+        return DEFAULT_SYSTEM_PROMPT
+
+    last_message = messages[-1]
+    user_content = (
+        last_message.content if hasattr(last_message, "content") else str(last_message)
+    )
+
+    # 判断是否 AGV 相关
+    if is_agv_related(user_content):
+        logger.info("检测到 AGV 相关问题，使用 RAG 提示词")
+        return RAG_SYSTEM_PROMPT
+
+    logger.info("普通问题，使用默认提示词")
+    return DEFAULT_SYSTEM_PROMPT
+
+
+# =============================================================================
+# 工具错误处理中间件
+# =============================================================================
+
+
+@wrap_tool_call
+def handle_tool_errors(request, handler):
+    """处理工具执行异常.
+
+    当工具执行发生错误时，返回友好的错误消息，而不是让整个流程崩溃。
+    """
+    try:
+        logger.info("hello world 1")
+        return handler(request)
+    except Exception as e:
+        logger.warning(f"工具执行失败: {request.tool_call.get('name')} - {e}")
+        return ToolMessage(
+            content=f"工具执行出错，请检查输入或稍后重试。({str(e)})",
+            tool_call_id=request.tool_call["id"],
+        )
+
+
+# =============================================================================
+# 模型 fallback 中间件
+# =============================================================================
+
+
+@wrap_model_call
+def model_fallback_middleware(request: ModelRequest, handler) -> ModelResponse:
+    """主模型报错时切换到备用模型.
+
+    当主模型调用发生任何错误时，自动切换到备用模型（ling）重试。
+    """
+    from src.agents.llm_factory import get_llm
+
+    try:
+        return handler(request)
+    except Exception as e:
+        logger.warning(f"主模型调用失败，切换到备用模型: {e}")
+        fallback_llm = get_llm("ling")
+        return handler(request.override(model=fallback_llm))
+
+
+# =============================================================================
 # 中间件列表（懒加载）
 # =============================================================================
 
@@ -91,7 +216,8 @@ def delete_old_messages(state: AgentState, runtime: Runtime) -> dict | None:
 def get_all_middleware() -> list:
     """获取所有中间件列表（懒加载）."""
     return [
-        # get_summarize_middleware(),
-        # trim_messages,
-        # delete_old_messages,
+        dynamic_system_prompt,  # 动态切换提示词
+        role_based_tools,  # 根据角色过滤工具
+        model_fallback_middleware,  # 模型失败时切换备用模型
+        handle_tool_errors,  # 工具执行异常处理
     ]

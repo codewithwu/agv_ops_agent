@@ -253,8 +253,9 @@ async def refresh_token(
 
     # 创建新的访问令牌
     expires_delta = timedelta(minutes=30)
+    role_value = user.role.value if hasattr(user.role, "value") else str(user.role)
     new_access_token = create_access_token(
-        data={"sub": user.username, "user_id": user.id},
+        data={"sub": user.username, "user_id": user.id, "role": role_value},
         expires_delta=expires_delta,
     )
 

@@ -13,9 +13,9 @@ from langchain.agents import create_agent
 
 from src.agents.checkpointer import get_checkpointer
 from src.agents.context import AgentContext
+from src.agents.state import AgentState
 from src.agents.llm_factory import get_llm
 from src.agents.middleware import get_all_middleware
-from src.agents.prompts import RAG_SYSTEM_PROMPT
 from src.agents.store import get_store
 from src.agents.tools import get_all_tools
 from src.utils import console_logger
@@ -55,9 +55,9 @@ class AgentManager:
             self._agents[session_id] = create_agent(
                 model=llm,
                 tools=get_all_tools(),
-                system_prompt=RAG_SYSTEM_PROMPT,
                 checkpointer=get_checkpointer(),
                 store=get_store(),
+                state_schema=AgentState,
                 context_schema=AgentContext,
                 middleware=get_all_middleware(),
             )

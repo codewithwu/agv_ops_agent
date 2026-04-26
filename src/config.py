@@ -69,5 +69,10 @@ class Settings(BaseSettings):
     openai_base_url: str = "https://api.longcat.chat/openai"
     openai_model_name: str = "LongCat-Flash-Chat"
 
+    # Ling LLM 配置（备用模型）
+    ling_api_key: str = ""
+    ling_baseurl: str = ""
+    ling_model_name: str = ""
+
 
 settings = Settings()

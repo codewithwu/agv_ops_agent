@@ -48,7 +48,7 @@ async def chat_stream(
     agent = agent_manager.get_agent(
         session_id=request.session_id, llm_provider=request.llm_provider
     )
-    console_logger.info(f"Agent 实例 ID: {id(agent)}, 会话: {request.session_id}")
+    console_logger.info(f"current_user: {current_user}")
 
     async def generate():
         """异步生成流式响应."""
@@ -56,7 +56,10 @@ async def chat_stream(
             for token, metadata in agent.stream(
                 {"messages": [{"role": "user", "content": request.message}]},
                 config={"configurable": {"thread_id": request.session_id}},
-                context={"user_id": current_user.get("sub", "anonymous")},
+                context={
+                    "user_id": current_user.get("sub", "anonymous"),
+                    "user_role": current_user.get("role", "viewer"),
+                },
                 stream_mode="messages",
             ):
                 # 检查 token 是否有 content 属性
@@ -103,7 +106,10 @@ async def chat(
     result = agent.invoke(
         {"messages": [{"role": "user", "content": request.message}]},
         config={"configurable": {"thread_id": request.session_id}},
-        context={"user_id": current_user.get("sub", "anonymous")},
+        context={
+            "user_id": current_user.get("sub", "anonymous"),
+            "user_role": current_user.get("role", "viewer"),
+        },
     )
 
     # 提取回复消息
