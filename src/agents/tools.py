@@ -3,9 +3,38 @@
 from functools import lru_cache
 
 from langchain.tools import tool, ToolRuntime
+from pydantic import BaseModel, Field
 
 from src.services.vectorstore import get_vectorstore_service
 from src.utils import console_logger
+
+
+# =============================================================================
+# 工具输入 Schema 定义
+# =============================================================================
+
+
+class SaveUserPreferenceInput(BaseModel):
+    """保存用户偏好的输入参数."""
+
+    preference_key: str = Field(
+        description="偏好键名，如 'language'（语言偏好）、'theme'（界面主题）、'notification'（通知设置）"
+    )
+    preference_value: str = Field(description="偏好值，如 'chinese'、'dark'、'enabled'")
+
+
+class GetUserPreferenceInput(BaseModel):
+    """获取用户偏好的输入参数."""
+
+    preference_key: str = Field(description="要获取的偏好键名，如 'language'、'theme'")
+
+
+class VectorSearchInput(BaseModel):
+    """向量检索的输入参数."""
+
+    query: str = Field(
+        description="用户的问题描述，例如 'AGV无法启动怎么办'、'手动模式怎么用'、'电池如何充电'"
+    )
 
 
 # =============================================================================
@@ -13,7 +42,7 @@ from src.utils import console_logger
 # =============================================================================
 
 
-@tool
+@tool(args_schema=SaveUserPreferenceInput)
 def save_user_preference(
     runtime: ToolRuntime,
     preference_key: str,
@@ -47,7 +76,7 @@ def save_user_preference(
     return f"已保存用户偏好: {preference_key} = {preference_value}"
 
 
-@tool
+@tool(args_schema=GetUserPreferenceInput)
 def get_user_preference(
     runtime: ToolRuntime,
     preference_key: str,
@@ -67,6 +96,13 @@ def get_user_preference(
     from src.agents.store import get_store
 
     user_id = runtime.context.get("user_id", "unknown")
+
+    writer = runtime.stream_writer
+
+    # Stream custom updates as the tool executes
+    writer(f"Looking up data for city: {user_id}")
+    writer(f"Acquired data for city: {user_id}")
+
     store = get_store()
     console_logger.info(f"store 2 {id(store)}")
     item = store.get(("user_preference", user_id), preference_key)
@@ -86,7 +122,7 @@ def get_user_preference(
 # =============================================================================
 
 
-@tool
+@tool(args_schema=VectorSearchInput)
 def vector_search(query: str) -> str:
     """根据用户问题，从 AGV 知识库中检索相关内容。
 

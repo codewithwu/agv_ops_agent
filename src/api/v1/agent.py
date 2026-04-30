@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from src.agents.langfuse_callback import observe_agent
 from src.agents.rag_agent import AgentManager
 from src.security.jwt import get_current_user
 from src.utils import console_logger
@@ -28,6 +29,7 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/chat/stream")
+@observe_agent
 async def chat_stream(
     request: ChatRequest,
     current_user: dict = Depends(get_current_user),
@@ -50,6 +52,7 @@ async def chat_stream(
     )
     console_logger.info(f"current_user: {current_user}")
 
+    # ========== 原代码（stream_mode="messages"）==========
     async def generate():
         """异步生成流式响应."""
         try:
@@ -60,13 +63,16 @@ async def chat_stream(
                     "user_id": current_user.get("sub", "anonymous"),
                     "user_role": current_user.get("role", "viewer"),
                 },
-                stream_mode="messages",
+                stream_mode="messages",  # ← 旧方式，只接收 token
             ):
                 # 检查 token 是否有 content 属性
                 if hasattr(token, "content") and token.content:
                     content = token.content
                     console_logger.debug(f"流式输出: {content}")
                     yield content
+        except Exception as e:
+            console_logger.error(f"流式输出异常: {e}")
+            yield f"[错误: {str(e)}]"
         except Exception as e:
             console_logger.error(f"流式输出异常: {e}")
             yield f"[错误: {str(e)}]"
@@ -83,6 +89,7 @@ async def chat_stream(
 
 
 @router.post("/chat", response_model=ChatResponse)
+@observe_agent
 async def chat(
     request: ChatRequest,
     current_user: dict = Depends(get_current_user),

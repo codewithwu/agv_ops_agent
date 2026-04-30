@@ -1,5 +1,7 @@
 # AGV Ops Agent
 
+![AGV ](https://minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com/ccv2%2F2026-04-30%2FMiniMax-M2.7%2F2033371718692643804%2F4798a20859fa90f2376169a1feac292ee4b4ed83303b129e5e98da7cc999d4cc..png?Expires=1777614515&OSSAccessKeyId=LTAI5tGLnRTkBjLuYPjNcKQ8&Signature=JIHonjRcOYUpPgt8KpQx8ZuR2Oc%3D)
+
 AGV（自动导引车）智能运维助手，基于 RAG（检索增强生成）技术，为 AGV 运维提供智能问答服务。
 
 ## 功能特性

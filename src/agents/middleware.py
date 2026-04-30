@@ -200,6 +200,7 @@ def model_fallback_middleware(request: ModelRequest, handler) -> ModelResponse:
     from src.agents.llm_factory import get_llm
 
     try:
+        raise ValueError('test')
         return handler(request)
     except Exception as e:
         logger.warning(f"主模型调用失败，切换到备用模型: {e}")

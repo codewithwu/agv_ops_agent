@@ -74,5 +74,10 @@ class Settings(BaseSettings):
     ling_baseurl: str = ""
     ling_model_name: str = ""
 
+    # ===== LangFuse 配置 =====
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_base_url: str = "https://cloud.langfuse.com"
+
 
 settings = Settings()
